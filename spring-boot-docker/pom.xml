@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>cn.jayhe</groupId>
+    <artifactId>spring-boot-docker</artifactId>
+    <version>1.0</version>
+
+    <packaging>jar</packaging>
+
+    <name>spring-boot-docker</name>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.0.5.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+        <docker.image.prefix>172.20.84.1:5000</docker.image.prefix>
+        <dockerhubhost>172.20.84.1:5000</dockerhubhost>
+        <docker.namespace></docker.namespace>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Docker maven plugin -->
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>1.1.1</version>
+                <executions>
+                    <!--执行 mvn package 时 自动 执行 mvn docker:build-->
+                    <execution>
+                        <id>build-image</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!--推送到私有仓库-->
+                    <!--<imageName>${docker.image.prefix}/${project.artifactId}</imageName>-->
+                    <!--本地-->
+                    <!--<imageName>${project.artifactId}</imageName>-->
+                    <imageName>${project.docker.image.name}</imageName>
+                    <dockerDirectory>${project.basedir}</dockerDirectory>
+                    <!--<imageTags>-->
+                        <!--&lt;!&ndash;可以指定多个标签&ndash;&gt;-->
+                        <!--<imageTag>${project.version}</imageTag>-->
+                    <!--</imageTags>-->
+                    <!--覆盖已存在的标签 镜像-->
+                    <forceTags>true</forceTags>
+
+                    <!--在maven setting.xml文件中配置server信息
+                    <server>
+                      <id>docker-aliyun</id>
+                      <username>username</username>
+                      <password>password</password>
+                      <configuration>
+                            <email>xxxx@email.com</email>
+                      </configuration>
+                    </server>
+                    -->
+                    <!--<serverId>xxxx</serverId>-->
+                    <resources>
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                </configuration>
+            </plugin>
+            <!-- Docker maven plugin -->
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <!-- 默认情况下不执行docker build -->
+                <skipDockerBuild>true</skipDockerBuild>
+            </properties>
+        </profile>
+        <!-- 生成docker image并保存在本地 -->
+        <profile>
+            <id>local-docker</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <project.docker.image.name>${project.artifactId}:${project.version}</project.docker.image.name>
+            </properties>
+        </profile>
+        <!-- 生成docker image, push到本地私有registry, 需要 DpushImage -->
+        <profile>
+            <id>local-docker-push</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <project.docker.image.name>${docker.image.prefix}/${project.artifactId}:${project.version}</project.docker.image.name>
+            </properties>
+        </profile>
+        <!-- 生成docker image, push到远程registry, 需要 DpushImage -->
+        <profile>
+            <id>repo-docker-push</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>l
+            <properties>
+                <project.docker.image.name>
+                    ${dockerhubhost}/${docker.namespace}/${project.artifactId}:${project.version}
+                </project.docker.image.name>
+            </properties>
+        </profile>
+    </profiles>
+</project>
